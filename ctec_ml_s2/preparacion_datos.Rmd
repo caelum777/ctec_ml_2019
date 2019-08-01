@@ -67,7 +67,7 @@ Como podemos observar la columna bathrooms posee valores inconsistentes ya que n
 Modifique la columna bathrooms para que solo posea valores enteros
 
 ```{r}
-# Escriba su código aqui
+casas$bathrooms <- floor(casas$bathrooms)
 ```
 
 ### 2. Llevar los datos a distribución normal.
@@ -78,7 +78,7 @@ Modifique la columna price del dataset de precios de casas para que siga una dis
 # Precios antes de la modificación
 hist(casas$price)
 # Escriba su codigo aqui
-# ...
+casas$price <- log10(casas$price)
 # Precios normalmente distribuidos
 hist(casas$price)
 ```

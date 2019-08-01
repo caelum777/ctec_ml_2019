@@ -13,6 +13,22 @@ Es un gran conjunto de datos para evaluar modelos de regresión simples.
 
 ![Proceso ROC](img/dataset-cover.jpg)
 
+```{r}
+#libreria para leer csv mas rapido
+library(readr)
+
+#
+library(dplyr)
+library(GGally)
+library(visdat)
+
+#librerías utilizadas
+library(caTools)
+
+#Librería de gráficos
+library(ggplot2)
+```
+
 ## Entendimiento de los Datos
 
 Con el fin de analizar y tratar de predecir el precio de las casas ubicadas en el condado de King, se trabajó con un conjunto de datos que contiene 8273 observaciones y 2 variables:
@@ -29,7 +45,6 @@ Ejemplo:
 `casas <- read.csv('kc_house_data.csv', header = T, na.strings = '?')`
 
 ```{r}
-casas <- read.csv('kc_house_data.csv', header = T, na.strings = '?')
 casas <- read_csv('kc_house_data.csv', col_types = cols(
   .default = col_double(),
   id = col_character(),
@@ -47,24 +62,6 @@ Ejemplo:
 summary(casas)
 ```
 
-```{r}
-#libreria para leer csv mas rapido
-library(readr)
-
-#
-library(dplyr)
-library(GGally)
-library(visdat)
-
-#librerías utilizadas
-library(caTools)
-
-#Librería de gráficos
-library(ggplot2)
-#Evitar mostrar warning messages
-options(warn=-1)
-```
-
 Cargue en una variable las columnas 'price' y 'sqft_living'
 
 Ejemplo
@@ -80,7 +77,6 @@ Utilice la función summary sobre la nueva variable
 ```{r}
 summary(casas)
 ggpairs(casas %>%
-        select(-id) %>%
         sample_n(1000))
 ```
 
@@ -119,6 +115,8 @@ Ejemplo
 
 ```{r}
 cor(casas, method='pearson')
+cor(casas, method='spearman')
+#Person funciona mejor en variables con distribucion normal
 ```
 
 ### Visualización
