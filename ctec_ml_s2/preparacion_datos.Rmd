@@ -92,9 +92,8 @@ Reemplace los valores faltantes de la columna sqft_living con la mediana de los 
 Nota: este dataset no posee valores faltantes pero para efectos del ejercicio esto no nos afecta ya que el código sería igual.
 
 ```{r}
-# Escriba su código aqui
+casas$sqft_living[is.na(casas$sqft_living)] <- median(casas$sqft_living)
 ```
-
 
 ### 4. Escalado
 
@@ -112,8 +111,20 @@ feature_scaling <- function(x) {
 1. Utilice la función `feature_scaling` para escalar los valores de la columna sqft_lot
 2. Compare el resultado con la función `scale()`
 
+**Respuesta:** Con la funcion **feature_scaling** la mayoría de los datos se encuentran en 0 y 0.1 y la dimension aumenta en 0.2.
+
+Con la funcion **scale**, la mayoria de datos se encuentran entre 0 y -0.3
+
+Parece que la proporcion entre ambos metodos es similar si lo vemos en un histograma.
+
 ```{r}
-# Escriba su código aqui
+hist(feature_scaling(casas$sqft_lot))
+head(feature_scaling(casas$sqft_lot))
+```
+
+```{r}
+hist(scale(casas$sqft_lot))
+head(scale(casas$sqft_lot))
 ```
 
 ### 5. Normalización con la función z-score
@@ -125,12 +136,16 @@ Escriba la función z_score y utilicela sobre la columna bathrooms.
 Pista: utilice las funciones `mean`, `sd`
 
 ```{r}
+z_score <- function(x) {
+  return ((x - mean(x))/sd(x))
+}
+```
+
+```{r}
 # Datos antes de la transformación
 hist(casas$bathrooms)
-# Escriba su código aqui
-# ...
 # Después de la transformación
-hist(casas$bathrooms)
+hist(z_score(casas$bathrooms))
 ```
 
 Note que ahora la media de los datos se acerca a 0
