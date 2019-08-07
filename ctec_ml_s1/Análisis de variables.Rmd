@@ -130,7 +130,11 @@ Ejemplo
 `plot(y = casas$price,x = casas$sqft_living, main = 'Relación entre Precio y Metros cuadrados', ylab = 'price', xlab = 'sqft_living')`
 
 ```{r}
-plot(y = casas$price,x = casas$sqft_living, main = 'Relación entre Precio y Metros cuadrados', ylab = 'price', xlab = 'sqft_living')
+hist(casas$price)
+hist(log10(casas$price))
+reg <- lm(formula = log10(price) ~ log10(sqft_living), data = casas)
+plot(y = log10(casas$price),x = log10(casas$sqft_living), main = 'Relación entre Precio y Metros cuadrados', ylab = 'price', xlab = 'sqft_living')
+abline(reg, col="red")
 ```
 
 ## Conclusiones
@@ -150,4 +154,11 @@ qqline(casas$price)
 densidad <- density(casas$price)
 plot(densidad)
 hist(log(casas$price))
+```
+
+## Polynomial
+```{r}
+plot(log(sqft_living) ~ log(sqft_lot), data = casas)
+mod_pred_area <- lm(log(sqft_living) ~ poly(log(sqft_lot), 2), data = casas)
+points(fitted(mod_pred_area) ~ log(sqft_lot), casas, col = "blue")
 ```
