@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(GGally)
 library(ggplot2)
 library(caTools)
+library(bestNormalize)
+library(MASS)
 ```
 
 # Tarea 3.
@@ -70,28 +72,26 @@ Pista: https://www.rdocumentation.org/packages/lessR/versions/1.9.8/topics/reg
 Nota: Al crear el modelo utilice el conjunto de datos de entrenamiento definido en el punto 3.
 
 ```{r}
-normalize <- function(x) {
-  return ((x - min(x)) / (max(x) - min(x)))
-}
-
-z_score <- function(x) {
-  return ((x - mean(x))/sd(x))
-}
-
-feature_scaling <- function(x) {
-  x_escalado <- ((x - min(x)) / (max(x) - min(x)))
-  return(x_escalado)
-}
-
-hist(df_train$disp)
-hist(z_score(df_train$disp))
-
-hist(df_train$weight)
-hist(z_score(df_train$weight))
+library(visdat)
+vis_dat(df_train)
 ```
 
 ```{r}
-reg <- lm(formula = z_score(disp) ~ z_score(weight), data = df_train)
+hist(df_train$disp)
+(disp_norm <- orderNorm(df_train$disp))
+hist(disp_norm$x.t)
+
+hist(df_train$weight)
+(weight_norm <- orderNorm(df_train$weight))
+hist(weight_norm$x.t)
+
+hist(df_train$mpg)
+(mpg_norm <- orderNorm(df_train$mpg))
+hist(mpg_norm$x.t)
+```
+
+```{r}
+reg <- lm(formula = mpg_norm$x.t ~ disp_norm$x.t + weight_norm$x.t, data = df_train)
 reg
 ```
 
