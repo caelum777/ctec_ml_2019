@@ -13,6 +13,8 @@ library(ggplot2)
 library(caTools)
 library(bestNormalize)
 library(MASS)
+library(lessR)
+library(mltools)
 ```
 
 # Tarea 3.
@@ -44,6 +46,8 @@ Con el fin de analizar y tratar de estimar las millas por galón de diferentes m
 
 ```{r}
 autos_mpg <- read.csv('auto-mpg_g.csv', header = T, na.strings = '?')
+head(autos_mpg)
+set.seed(3)
 ```
 
 2. Utilizando Ggpairs cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
@@ -58,6 +62,8 @@ Recuerde fijar una semilla para que el documento sea reproducible.
 
 Pista: https://www.rdocumentation.org/packages/caTools/versions/1.17.1/topics/sample.split
 ```{r}
+set.seed(3)
+
 result <- sample.split(autos_mpg$mpg, SplitRatio=0.75, group=NULL)
 
 df_train <- autos_mpg[result==TRUE, ]
@@ -78,21 +84,25 @@ vis_dat(df_train)
 
 ```{r}
 hist(df_train$disp)
-(disp_norm <- orderNorm(df_train$disp))
-hist(disp_norm$x.t)
+df_train$disp <- log10(df_train$disp)
+hist(df_train$disp)
 
 hist(df_train$weight)
-(weight_norm <- orderNorm(df_train$weight))
-hist(weight_norm$x.t)
+df_train$weight <- log10(df_train$weight)
+hist(df_train$weight)
 
 hist(df_train$mpg)
-(mpg_norm <- orderNorm(df_train$mpg))
-hist(mpg_norm$x.t)
+df_train$mpg <- orderNorm(df_train$mpg)$x.t
+hist(df_train$mpg)
+
+df_test$disp <- log10(df_test$disp)
+df_test$weight <- log10(df_test$weight)
+df_test$mpg <- orderNorm(df_test$mpg)$x.t
 ```
 
 ```{r}
-reg <- lm(formula = mpg_norm$x.t ~ disp_norm$x.t + weight_norm$x.t, data = df_train)
-reg
+reg <- lm(formula = mpg ~ disp + weight, data = df_train)
+#reg <- lessR::reg(mpg ~ disp + weight, data=df_train)
 ```
 
 5. Realice predicciones utilizando el conjunto de pruebas y evalue el resultado con la métrica MSE.
@@ -100,7 +110,11 @@ reg
 Pista: https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/mse
 ```{r}
 library(Metrics)
-# Escriba su código aqui
+preds <- predict(reg, df_test)
+preds[1]
+df_test$mpg[1]
+mltools::mse(preds = preds, actuals=df_test$mpg)
+Metrics::mse(df_test$mpg, preds)
 ```
 
 6. Opcional
