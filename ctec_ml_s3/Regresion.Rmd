@@ -14,7 +14,7 @@ library(caTools)
 library(bestNormalize)
 library(MASS)
 library(lessR)
-library(mltools)
+library(Metrics)
 ```
 
 # Tarea 3.
@@ -84,36 +84,35 @@ vis_dat(df_train)
 
 ```{r}
 hist(df_train$disp)
-df_train$disp <- log10(df_train$disp)
+df_train$disp <- log(df_train$disp)
 hist(df_train$disp)
 
 hist(df_train$weight)
-df_train$weight <- log10(df_train$weight)
+df_train$weight <- log(df_train$weight)
 hist(df_train$weight)
 
-hist(df_train$mpg)
-df_train$mpg <- orderNorm(df_train$mpg)$x.t
-hist(df_train$mpg)
+#hist(df_train$mpg)
+#df_train$mpg <- log10(df_train$mpg)
+#hist(df_train$mpg)
 
-df_test$disp <- log10(df_test$disp)
-df_test$weight <- log10(df_test$weight)
-df_test$mpg <- orderNorm(df_test$mpg)$x.t
+df_test$disp <- log(df_test$disp)
+df_test$weight <- log(df_test$weight)
+#df_test$mpg <- log10(df_test$mpg)
 ```
 
 ```{r}
 reg <- lm(formula = mpg ~ disp + weight, data = df_train)
-#reg <- lessR::reg(mpg ~ disp + weight, data=df_train)
 ```
 
 5. Realice predicciones utilizando el conjunto de pruebas y evalue el resultado con la métrica MSE.
 
 Pista: https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/mse
 ```{r}
-library(Metrics)
 preds <- predict(reg, df_test)
-preds[1]
-df_test$mpg[1]
-mltools::mse(preds = preds, actuals=df_test$mpg)
+# Denormalize mpg predictions
+#preds <- 10^(preds)
+# Denormalize mpg test data
+#df_test$mpg <- 10^df_test$mpg
 Metrics::mse(df_test$mpg, preds)
 ```
 
