@@ -1,6 +1,8 @@
 ---
 title: "Regresion"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -42,7 +44,7 @@ Con el fin de analizar y tratar de estimar las millas por galón de diferentes m
 
 # Ejercicios 
 
-1. Cargue el archivo auto-mpg_g.csv en una variable
+**1.** Cargue el archivo auto-mpg_g.csv en una variable
 
 ```{r}
 autos_mpg <- read.csv('auto-mpg_g.csv', header = T, na.strings = '?')
@@ -50,13 +52,18 @@ head(autos_mpg)
 set.seed(3)
 ```
 
-2. Utilizando Ggpairs cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
+**2.** Utilizando Ggpairs cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
+
+Aplicamos un ggpairs para ver cuales variables tienen más correlacion con MPG
 
 ```{r}
 ggpairs(autos_mpg[-c(9)])
 ```
 
-3. Separe los datos en 2 conjuntos, uno de entrenamiento y otro de pruebas. Normalmente se trabaja utilizando un 70-80% de los datos para entrenamiento y el resto para pruebas.
+Luego de analizar la correlaciones se determina que las variables **disp** y **weight** son las más significativas
+
+
+**3.** Separe los datos en 2 conjuntos, uno de entrenamiento y otro de pruebas. Normalmente se trabaja utilizando un 70-80% de los datos para entrenamiento y el resto para pruebas.
 
 Recuerde fijar una semilla para que el documento sea reproducible.
 
@@ -71,16 +78,15 @@ df_train <- autos_mpg[result==TRUE, ]
 df_test <- autos_mpg[result==FALSE, ]
 ```
 
-4. Cree un modelo de regresion lineal utilizando el atributo mpg como la variable objetivo y en base a las correlaciones observadas en el gráfico del punto 2 escoja al menos dos atributos para usarlos como variables predictoras para el modelo.
+**4.** Cree un modelo de regresion lineal utilizando el atributo mpg como la variable objetivo y en base a las correlaciones observadas en el gráfico del punto 2 escoja al menos dos atributos para usarlos como variables predictoras para el modelo.
 
 Pista: https://www.rdocumentation.org/packages/lessR/versions/1.9.8/topics/reg
 
 Nota: Al crear el modelo utilice el conjunto de datos de entrenamiento definido en el punto 3.
 
-```{r}
-library(visdat)
-vis_dat(df_train)
-```
+Aplicamos un log a las variables predictoras y comparamos los histogramas antes y despues de aplicar el log.
+Luego de aplicar varias pruebas, se determinó que aplicar log a la variable MPG empeora el MSE, por lo tanto se decide
+aplicar log solo a las variables predictoras.
 
 ```{r}
 hist(df_train$disp)
@@ -91,13 +97,8 @@ hist(df_train$weight)
 df_train$weight <- log(df_train$weight)
 hist(df_train$weight)
 
-#hist(df_train$mpg)
-#df_train$mpg <- log10(df_train$mpg)
-#hist(df_train$mpg)
-
 df_test$disp <- log(df_test$disp)
 df_test$weight <- log(df_test$weight)
-#df_test$mpg <- log10(df_test$mpg)
 ```
 
 ```{r}
@@ -107,12 +108,9 @@ reg <- lm(formula = mpg ~ disp + weight, data = df_train)
 5. Realice predicciones utilizando el conjunto de pruebas y evalue el resultado con la métrica MSE.
 
 Pista: https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/mse
+
 ```{r}
 preds <- predict(reg, df_test)
-# Denormalize mpg predictions
-#preds <- 10^(preds)
-# Denormalize mpg test data
-#df_test$mpg <- 10^df_test$mpg
 Metrics::mse(df_test$mpg, preds)
 ```
 
