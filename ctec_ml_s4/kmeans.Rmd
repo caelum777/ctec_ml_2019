@@ -15,81 +15,124 @@ knitr::opts_chunk$set(echo = TRUE)
 Librerias
 ```{r}
 library('ggplot2')
+library('dplyr')
+library('GGally')
+library('reshape2')
 ```
 
-1. Desarolle el Análisis del Problema
-```{r}
-# Construya el análisis del problema
-```
+**1.** Desarolle el Análisis del Problema
+Se nos presenta un dataset con ventas al por mayor anules en diferentes categorias de productos, separado por canales y regiones. Si realizamos un buen analisis a estos datos podremos detectar informacion que nos pueda ayudar a encontrar cuales productos se venden más por region o por canal, encontrar correlaciones entre las ventas de estos productos, detectar grupos de posibles clientes basado en el total anual.
+
+
 Fuente del dataset:
 https://archive.ics.uci.edu/ml/datasets/Wholesale+customers
 
 
-2. Cargue el archivo Wholesale customers data.csv en una variable
+**2.** Cargue el archivo Wholesale customers data.csv en una variable
 
 ```{r}
-# Escriba su código aqui
+wholesale <- read.csv('Wholesale.csv', header = T, na.strings = '?')
 ```
 
-3. Desarolle el Entendimiento de los Datos
+**3.** Desarolle el Entendimiento de los Datos
+
+Tenemos datos de Ventas anules por categoria de producto, separado por canales y regiones
+El canal 1 corresponde a Hoteles/Restaurantes/Cafe
+El canal 2 corresponde a Retail
+La region 1 es Lisbon
+Region 2: Oporto	47 
+Region 3: Otras Regiones
+
+-	Fresh: annual spending (m.u.) on fresh products (Continuous); 
+-	Milk: annual spending (m.u.) on milk products (Continuous); 
+-	Grocery: annual spending (m.u.)on grocery products (Continuous); 
+-	Frozen: annual spending (m.u.)on frozen products (Continuous) 
+-	Detergents_Paper: annual spending (m.u.) on detergents and paper products (Continuous) 
+-	Delicatessen: annual spending (m.u.)on and delicatessen products (Continuous); 
 
 ```{r}
-# Escriba su código aqui
+glimpse(wholesale)
+summary(wholesale)
 ```
 
-4. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
+**4.** Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
+
+Existe una fuerte correlacion entre Grocery y Detergents_Paper
 
 ```{r}
-# Escriba su código aqui
+ggpairs(wholesale)
+
+ggplot(wholesale) +
+    geom_point(aes(x = Detergents_Paper, y = Grocery))
 ```
 
-5. Explique el siguiente gráfico
+**5.** Explique el siguiente gráfico
+
+En el grafico podemos observar boxplots por cada tipo de producto en los dos Channels existentes #1 y #2
+Para algunos productos podemos concluir que existen outliers considerables, como en el caso de Delicassen y Fresh.
+Aunque para todos los productos existen datos que se salen de la media, o sesgos.
 
 ```{r}
 #Grafico
-#bxplt <- ggplot(data = melt(Wholesale), aes(x= variable, y = value))
-#bxplt <- bxplt + geom_boxplot()
-#bxplt <- bxplt + facet_wrap(~Channel)
-#bxplt <- bxplt + coord_flip()
-#bxplt <- bxplt + labs(x = 'producto', y  = 'ventas')
-#bxplt <- bxplt + ggtitle('Ventas por producto y por canal')
-#bxplt
+wholesale$Channel <- factor(wholesale$Channel)
+wholesale$Region <- factor(wholesale$Region)
 
-# Escriba su código aqui
+ggplot(data = melt(wholesale)) +
+  geom_boxplot(aes(x= variable, y = value)) +
+  facet_wrap(~Channel) +
+  coord_flip() +
+  labs(x = 'producto', y  = 'ventas') +
+  ggtitle('Ventas por producto y por canal')
 ```
 
-6. Cree un modelo de agrupación K- Means
+**6.** Cree un modelo de agrupación K- Means
 Para agrupar a los clientes con base al consumo, vamos a utilizar solo las variables Fresh, Milk, Grocery, Frozen, Detergents_Paper y Delicassen. En este caso, vamos a intentar agrupar los clientes en 5 grupos diferentes.
 
 
 ```{r}
-# Escriba su código aqui
-
 #5 Centroides utilizando k-means
-#modelo.agrupacion <- kmeans(Wholesale[,c(3:8)], centers = 5)
+modelo.agrupacion <- kmeans(wholesale[,c(3:8)], centers = 5)
 
 #predecir utilizando el modelo para agregar una variable nueva llamada 'cluster' al conjunto de datos
-#Wholesale$cluster <- modelo.agrupacion$cluster
+wholesale$cluster <- modelo.agrupacion$cluster
 
 #convertir la variable nueva a un factor
-#Wholesale$cluster <- factor(Wholesale$cluster)
+wholesale$cluster <- factor(wholesale$cluster)
 
 ```
 
-6. Realice al menos 3 modelos cambiando los centroides 
+**7.** Realice al menos 3 modelos cambiando los centroides 
 ```{r}
-# Escriba su código aqui
+#2 Centroides utilizando k-means
+wholesale$cluster_2  <- kmeans(wholesale[,c(3:8)], centers = 2)$cluster
+
+#convertir la variable nueva a un factor
+wholesale$cluster_2 <- factor(wholesale$cluster)
+
+#3 Centroides utilizando k-means
+wholesale$cluster_3 <- kmeans(wholesale[,c(3:8)], centers = 3)$cluster
+
+#convertir la variable nueva a un factor
+wholesale$cluster_3 <- factor(wholesale$cluster)
+
+#4 Centroides utilizando k-means
+wholesale$cluster_4 <- kmeans(wholesale[,c(3:8)], centers = 5)$cluster
+
+#convertir la variable nueva a un factor
+wholesale$cluster_4 <- factor(wholesale$cluster)
 ```
 
-7. Evaluacioón del modelo
+**8.** Evaluacioón del modelo
+
+Parece que el cluster que más consume es el #5
 ```{r}
 # Escriba su código aqui
 #Explicacion de los grupos generados
-#by(Wholesale, Wholesale$cluster, summary)
+by(wholesale$Fresh, wholesale$cluster, sum)
 ```
 
 
-8. Desarolle al menos 5 conclusiones sobre los grupos realizados
+**9.** Desarolle al menos 5 conclusiones sobre los grupos realizados
   * Ejemplo:
     - Las principales características de cada grupo son:
       - #### Grupo #1: (2do grupo más pequeño)
@@ -100,5 +143,129 @@ Para agrupar a los clientes con base al consumo, vamos a utilizar solo las varia
       - Alto consumo de alimentos congelados.
       - Bajo consumo de detergentes.
       - Bajo consumo de delicassen.
+
+**1.** El tercer cluster es el mas grande y el primero el segundo más pequeño
+
+```{r}
+modelo.agrupacion$size
+```
+
+2. Observaciones de la region 3 (Otras regiones)
+  + Fresh es el producto que más de vende
+  + El cluster 4 es el que más compra productos Fresh
+  + El cluster 5 es el que más compra Grocery
+
+```{r}
+wholesale.melted <- melt(wholesale)
+
+#Filtrar por Region 3
+wholesale.melted <- wholesale.melted %>%
+  filter(Region==3)
+
+#Que producto se vende más en la region 3
+by(wholesale.melted$value, wholesale.melted$variable, sum)
+#En cual cluster se compra más productos Fresh
+by(wholesale$Fresh, wholesale$cluster, sum)
+
+
+ggplot(wholesale.melted) + 
+    geom_point(aes(x = value, y = variable, color=cluster)) +
+    labs(x = 'ventas', y  = 'producto') +
+    ggtitle('Ventas por producto en la region 3')
+
+fresh_region3 <- wholesale.melted %>%
+  filter(variable=='Fresh')
+
+ggplot(fresh_region3) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    labs(x = 'Fresh', y  = 'ventas') +
+    ggtitle('Ventas de Fresh en la region 3')
+
+grocery_region3 <- wholesale.melted %>%
+  filter(variable=='Grocery')
+
+ggplot(grocery_region3) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    labs(x = 'Grocery', y  = 'ventas') +
+    ggtitle('Ventas de Grocery en la region 3')
+```
+
+**3.** Oservaciones del Channel 1 (Horeca)
+* Este Channel compra más que Channel 2
+* Al igual que en la Region 3, el producto que más se vende es Fresh
+* Al igual que en la Region 3, el cluster que más compra Fresh es el 4
+* Se puede deducir entonces que muchos de los clientes que compran Fresh en la Region 3 son Hoteles/Restaurantes/Cafes
+```{r}
+wholesale.melted <- melt(wholesale)
+# Cuanto vende cada Channel
+by(wholesale.melted$value, wholesale.melted$Channel, sum)
+wholesale.melted <- wholesale.melted %>%
+  filter(Channel==1)
+# Cual producto se vende más en el channel 1
+by(wholesale.melted$value, wholesale.melted$variable, sum)
+
+ggplot(wholesale.melted) + 
+    geom_point(aes(x = value, y = variable, color=cluster)) +
+    labs(x = 'ventas', y  = 'producto') +
+    ggtitle('Ventas por producto en el Channel 1')
+
+fresh_channel1 <- wholesale.melted %>%
+  filter(variable=='Fresh')
+
+ggplot(fresh_channel1) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    labs(x = 'Fresh', y  = 'ventas') +
+    ggtitle('Ventas de Fresh en Channel 1')
+```
+
+**4.** Concluciones sobre consumo de leche
+* El Cluster 5 y 3 es quienes más consumen leche y a menor precio
+* La region 3 (Oporto) es la que menos consume Leche
+* Se consume más leche en Channel 2 (Retail)
+* El cluster 3 es mayor en Channel 1 (Horeca) y el cluster 5 es mayor en Channel 2 (Retail)
+```{r}
+wholesale.melted <- melt(wholesale)
+#Filtrar por categoria Milk
+milk <- wholesale.melted %>%
+  filter(variable=='Milk')
+#Cual cluster consume más leche
+by(milk$value, milk$cluster, sum)
+
+ggplot(milk) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    facet_wrap(~Channel) +
+    labs(x = 'Milk', y  = 'ventas') +
+    ggtitle('Ventas de Milk por Channel')
+
+ggplot(milk) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    facet_wrap(~Region) +
+    labs(x = 'Milk', y  = 'ventas') +
+    ggtitle('Ventas de Milk por Region')
+```
+
+**5.** Concluciones sobre consumo de detergentes y papel
+* El cluster 5 es quien más consume detergente y sobre todo en Retail (Channel 2)
+* Nuevamente el cluster 3 consume más de este producto en Channel 1 (Horeca) al igual que la leche
+```{r}
+wholesale.melted <- melt(wholesale)
+#Filtrar por categoria Detergents_Pape
+detergents_paper <- wholesale.melted %>%
+  filter(variable=='Detergents_Paper')
+#Cual cluster consume más Detergents_Paper
+by(detergents_paper$value, detergents_paper$cluster, sum)
+
+ggplot(detergents_paper) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    facet_wrap(~Channel) +
+    labs(x = 'Detergentes y Papel', y  = 'ventas') +
+    ggtitle('Ventas de Detergentes y Papel por Channel')
+
+ggplot(detergents_paper) +
+    geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
+    facet_wrap(~Region) +
+    labs(x = 'Detergentes y Papel', y  = 'ventas') +
+    ggtitle('Ventas de Detergentes y Papel por Region')
+```
 
 
