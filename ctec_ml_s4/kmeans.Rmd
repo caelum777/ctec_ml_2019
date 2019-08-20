@@ -150,10 +150,11 @@ by(wholesale$Fresh, wholesale$cluster, sum)
 modelo.agrupacion$size
 ```
 
-2. Observaciones de la region 3 (Otras regiones)
-  + Fresh es el producto que más de vende
-  + El cluster 4 es el que más compra productos Fresh
-  + El cluster 5 es el que más compra Grocery
+**2.** Observaciones de la region 3 (Otras regiones)
+
+* Fresh es el producto que más de vende
+* El cluster 4 es el que más compra productos Fresh
+* El cluster 5 es el que más compra Grocery
 
 ```{r}
 wholesale.melted <- melt(wholesale)
@@ -191,10 +192,12 @@ ggplot(grocery_region3) +
 ```
 
 **3.** Oservaciones del Channel 1 (Horeca)
+
 * Este Channel compra más que Channel 2
 * Al igual que en la Region 3, el producto que más se vende es Fresh
 * Al igual que en la Region 3, el cluster que más compra Fresh es el 4
 * Se puede deducir entonces que muchos de los clientes que compran Fresh en la Region 3 son Hoteles/Restaurantes/Cafes
+
 ```{r}
 wholesale.melted <- melt(wholesale)
 # Cuanto vende cada Channel
@@ -219,37 +222,43 @@ ggplot(fresh_channel1) +
 ```
 
 **4.** Concluciones sobre consumo de leche
+
 * El Cluster 5 y 3 es quienes más consumen leche y a menor precio
 * La region 3 (Oporto) es la que menos consume Leche
 * Se consume más leche en Channel 2 (Retail)
 * El cluster 3 es mayor en Channel 1 (Horeca) y el cluster 5 es mayor en Channel 2 (Retail)
+
 ```{r}
 wholesale.melted <- melt(wholesale)
 #Filtrar por categoria Milk
-milk <- wholesale.melted %>%
+lactose_sales <- wholesale.melted %>%
   filter(variable=='Milk')
-#Cual cluster consume más leche
-by(milk$value, milk$cluster, sum)
+#Cual cluster consume más Milk
+by(lactose_sales$value, lactose_sales$cluster, sum)
+```
 
-ggplot(milk) +
+```{r}
+ggplot(lactose_sales) +
     geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
     facet_wrap(~Channel) +
-    labs(x = 'Milk', y  = 'ventas') +
-    ggtitle('Ventas de Milk por Channel')
+    labs(x = 'Ventas de leche por cluster', y  = 'ventas') +
+    ggtitle('Ventas de leche por channel')
 
-ggplot(milk) +
+ggplot(lactose_sales) +
     geom_bar(aes(x = variable, weight = value, fill=cluster)) + 
     facet_wrap(~Region) +
-    labs(x = 'Milk', y  = 'ventas') +
-    ggtitle('Ventas de Milk por Region')
+    labs(x = 'Ventas de leche por cluster', y  = 'ventas') +
+    ggtitle('Ventas de leche por region')
 ```
 
 **5.** Concluciones sobre consumo de detergentes y papel
+
 * El cluster 5 es quien más consume detergente y sobre todo en Retail (Channel 2)
 * Nuevamente el cluster 3 consume más de este producto en Channel 1 (Horeca) al igual que la leche
+
 ```{r}
 wholesale.melted <- melt(wholesale)
-#Filtrar por categoria Detergents_Pape
+#Filtrar por categoria Detergents_Paper
 detergents_paper <- wholesale.melted %>%
   filter(variable=='Detergents_Paper')
 #Cual cluster consume más Detergents_Paper
@@ -267,5 +276,3 @@ ggplot(detergents_paper) +
     labs(x = 'Detergentes y Papel', y  = 'ventas') +
     ggtitle('Ventas de Detergentes y Papel por Region')
 ```
-
-
