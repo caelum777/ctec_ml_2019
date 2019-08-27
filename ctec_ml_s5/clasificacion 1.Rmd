@@ -1,6 +1,8 @@
 ---
 title: "Random Forest"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -18,20 +20,20 @@ library(randomForest)
 library(corrplot)
 library(dplyr)
 library(ggplot2)
+library(rpart.plot)
+library(randomForest)
 ```
 
-1. Desarolle el Análisis del Problema
-```{r}
-# Construya el análisis del problema
+**1.** Desarolle el Análisis del Problema
 
+Un modelo de clasficacion de hongos comestibles o venesos, podría ser de gran utilidad para ayudar a estudiar nuevas especies de hongos
+o incluso ayudar a personas a saber si es seguro comer algún hongo en cuestión. Es ahí donde el data set de agaricus lepiota nos puede ayudar
+aplicando distintos modelos.
 
-# Este conjunto de datos incluye descripciones de muestras hipotéticas correspondientes a 23 especies de # hongos branquiales en el hongo de la familia Agaricus y Lepiota extraídas de la Guía de campo de la # # Sociedad Audubon de hongos de América del Norte (1981). Cada especie se identifica como definitivamente # comestible, definitivamente venenosa o de comestibilidad desconocida y no se recomienda. Esta última # # clase se combinó con la venenosa. La Guía establece claramente que no existe una regla simple para # # # determinar la comestibilidad de un hongo; ninguna regla como "folletos tres, que así sea" para el # roble venenoso y la hiedra.
-
-```
 Fuente del dataset:
 https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data
 
-1. Cargue el archivo agaricus_lepiota.data.csv en una variable
+**1.** Cargue el archivo agaricus_lepiota.data.csv en una variable
 
 ```{r}
 mushroom<- read.csv(file = "datos/agaricus-lepiota.data", header = FALSE, sep = ",",strip.white = TRUE,
@@ -76,7 +78,7 @@ levels(mushroom$population)<- c("abundant","clustered","numerous","scattered","s
 levels(mushroom$habitat)<-c("woods","grasses","leaves","meadows","paths","urban","waste")
 ```
 
-2. Desarolle el Entendimiento de los Datos
+**2.** Desarolle el Entendimiento de los Datos
 
 1. cap-shape:                bell=b,conical=c,convex=x,flat=f,knobbed=k,sunken=s
 2. cap-surface:              fibrous=f,grooves=g,scaly=y,smooth=s
@@ -101,7 +103,7 @@ levels(mushroom$habitat)<-c("woods","grasses","leaves","meadows","paths","urban"
 21. population:              abundant=a,clustered=c,numerous=n,scattered=s,several=v,solitary=y
 22. habitat:                 grasses=g,leaves=l,meadows=m,paths=p,urban=u,waste=w,woods=d
 
-3. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
+**3.** Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
 
 ```{r}
 ggplot(data = mushroom, aes(x=cap.shape, y=cap.surface, color=class)) + 
@@ -121,20 +123,61 @@ ggplot(data = mushroom, aes(x=ring.type, y=veil.color, color=class)) +
     scale_color_manual(breaks = c('edible','poisonous'),values=c('darkgreen','red'))
 ```
 
+> De la primer grafica podemos deducir que los hongos de con cap-shape sunken y cap.surface fibrous son comestibles, aunque hay pocos datos sobre este tipo de hongos.
 
-4. Realice al menos 3 modelos vistos en clase
+> De la segunda podemos deducir los hongos de poblacion "abundant" y que habitan en "grasses" son comestibles, asi como los hongos "clustered" y que habitan en "waste".
+
+> La tercer grafica nos da el indicio de que los hongos con olor "almond" son comestibles independientemente de su habitad. Y los de olor "foul" tienden a ser venenosos independientemente de su habitad.
+
+> Por ultimo la cuarta grafica nos muestra que los hongos con ring.type "large" y de veil.color "white" son venesos.
+
+**4.** Realice al menos 3 modelos vistos en clase
+
 ```{r}
-# Escriba su código aqui
+# Crear los sets de entrenamiento y prueba
+set.seed(7)
+splt <- sample.split(mushroom$class, SplitRatio = 0.7)
+mushroom.entrenamiento <- mushroom[splt,] 
+mushroom.prueba <- mushroom[!splt,]
 ```
 
-5. Evaluación del modelo
 ```{r}
-# Escriba su código aqui
+modelo.arbol <- rpart(class ~ ., data = mushroom.entrenamiento, method =  'class')
+modelo.bosque <- randomForest(class ~ ., data = mushroom.entrenamiento)
+modelo.regresion <- glm(class ~ odor + cap.shape + ring.type + bruises + ring.number + gill.spacing, data = mushroom.entrenamiento, family = binomial)
+```
 
+**5.** Evaluación del modelo
+
+```{r}
+rpart.plot(modelo.arbol,
+           shadow.col = "gray",
+           main = "Clasificación hongos venenosos \n(Arbol de decisión)\n")
+# Evaluamos las predicciones del arbol de decision
+modelo.arbol.predicciones <- predict(modelo.arbol, newdata = mushroom.prueba, type = 'class')
+modelo.arbol.evaluacion <- table(mushroom.prueba$class, modelo.arbol.predicciones)
+print(modelo.arbol.evaluacion)
+```
+
+```{r}
+# Evaluamos las predicciones del random forest
+modelo.bosque.predicciones <- predict(modelo.bosque, newdata = mushroom.prueba, type = 'class')
+modelo.bosque.evaluacion <- table(mushroom.prueba$class, modelo.bosque.predicciones)
+print(modelo.bosque.evaluacion)
+```
+
+```{r}
+# Evaluamos las predicciones de la regresion logistica
+modelo.regresion.predicciones <- predict(modelo.regresion, newdata = mushroom.prueba, type = 'response')
+modelo.regresion.evaluacion <- table(mushroom.prueba$class, modelo.regresion.predicciones)
+print(modelo.bosque.evaluacion)
 ```
 
 
-8. Desarolle al menos 3 conclusiones sobre las clasificaciones de los modelos
+**6.** Desarolle al menos 3 conclusiones sobre las clasificaciones de los modelos
 
+- El modelo de arbol de desicion fué el único en clasificar 9 hongos como comestibles cuando en realidad eran venenosos
+- El modelo de random forest y regresion logica parecen clasificar correctamente el 100% de las veces, lo cual nos puede hacer sospechar de que hay un sobreajuste o hay algún problema con la implementación del modelo.
+- El modelo de regresion logica no trabaja bien con todas las variables, se tuvo que ir agregando poco a poco las variables que mejor se fueran acoplando al modelo, ya que algunas variables generan un warning en el modelo que dice que no pudo converger, como fué el caso con la variable stalk-surface-above-ring y stalk-surface-below-ring.
 
 
