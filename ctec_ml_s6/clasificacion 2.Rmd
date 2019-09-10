@@ -14,10 +14,12 @@ Librerias
 ```{r}
 library(caTools)
 library(rpart)
+library(dplyr)
+library(ggplot2)
 #..........Librerias de los modelos
 ```
 
-1. Desarolle el An?lisis del Problema
+1. Desarolle el Analisis del Problema
 ```{r}
 # Construya el análisis del problema
 
@@ -36,19 +38,62 @@ http://datosabiertos.csv.go.cr/dashboards/19683/accidentes/
 1. Cargue el archivo nombre.csv en una variable
 
 ```{r}
-# Escriba su c?digo aqui
+accidentes <- read.csv(file = "temp_5571830814335439232.csv", header = TRUE, sep = ",", strip.white = TRUE, stringsAsFactors = TRUE,
+                       colClasses = c("NULL","factor", "factor", "factor", "NULL", "factor", "integer", "factor", "factor", "factor", "factor", "factor", "NULL", "NULL", "NULL"))
+
+# Cambiamos los headers por unos más legibles
+names(accidentes) <- c("rol", "lesion", "edad", "sexo", "anno", "mes", "dia", "provincia", "canton", "distrito")
+
+# Cambiamos el tipo de lesion por Ileso o No Ileso
+levels(accidentes$lesion) <- c("No Ileso", "No Ileso", "Ileso", "No Ileso")
+
+# Cambiamos nombres de provincias por unos mas legibles
+levels(accidentes$provincia) <- c("Alajuela", "Cartago", "Guanacaste", "Heredia", "Limon", "Puntarenas", "San Jose")
+
+# Cambiamos nombres de dia por unos mas legibles
+levels(accidentes$dia) <- c("Domingo", "Jueves", "Lunes", "Martes", "Miercoles", "Sabado", "Viernes")
+accidentes$dia <- factor(accidentes$dia, order = TRUE, 
+                         levels = c("Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"))
 ```
 
+ 
 2. Desarolle el Entendimiento de los Datos
 
-```{r}
-# Escriba su c?digo aqui
-```
+1. Rol	
+2. Tipo de lesión	
+3. Edad
+3. Sexo
+4. Año
+5. Mes
+6. Día
+7. Provincia
+8. Cantón
+9. Distrito
 
-3. Utilizando barplot cree un gr?fico de los atributos del dataset, observe las correlaciones entre atributos
+3. Utilizando barplot cree un grafico de los atributos del dataset, observe las correlaciones entre atributos
+
+
+Parece que la variable rol es la más significativa para determinar si sale ileso o no de un accidente
 
 ```{r}
-# Escriba su c?digo aqui
+glimpse(accidentes)
+
+tbl <- with(accidentes, table(lesion, provincia))
+ggplot(as.data.frame(tbl), aes(factor(provincia), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(accidentes, table(lesion, sexo))
+ggplot(as.data.frame(tbl), aes(factor(sexo), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(accidentes, table(lesion, dia))
+ggplot(as.data.frame(tbl), aes(factor(dia), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(accidentes, table(lesion, rol))
+ggplot(as.data.frame(tbl), aes(factor(rol), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge') +
+  coord_flip()
 ```
 
 
