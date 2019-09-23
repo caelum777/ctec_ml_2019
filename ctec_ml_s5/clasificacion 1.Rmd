@@ -169,8 +169,8 @@ print(modelo.bosque.evaluacion)
 ```{r}
 # Evaluamos las predicciones de la regresion logistica
 modelo.regresion.predicciones <- predict(modelo.regresion, newdata = mushroom.prueba, type = 'response')
-modelo.regresion.evaluacion <- table(mushroom.prueba$class, modelo.regresion.predicciones)
-print(modelo.bosque.evaluacion)
+modelo.regresion.evaluacion <- table(mushroom.prueba$class, modelo.regresion.predicciones >= 0.8)
+print(modelo.regresion.evaluacion)
 ```
 
 

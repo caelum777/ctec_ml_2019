@@ -38,3 +38,81 @@ Al final compara el desempeño de los dos modelos. Si es un método no supervisa
 * Comparacion de modelos 25%
     + Evaluación de diferencias
     + Conclusiones
+    
+
+Librerias
+```{r}
+library(caTools)
+library(rpart)
+library(dplyr)
+library(ggplot2)
+#..........Librerias de los modelos
+library(rpart)
+library(randomForest)
+library(neuralnet)
+library(e1071)
+library(nnet)
+library(ROCR)
+```
+
+    
+**1.** Desarolle el Análisis del Problema
+
+
+
+Fuente del dataset:
+https://sitiooij.poder-judicial.go.cr/index.php/apertura/transparencia/estadisticas-policiales
+
+**2.** Analisis exploratorio
+
+Entendimiento de los Datos
+
+Con el fin de analizar y tratar de determinar el tipo de delito al que podría estar expuesta una victima, se trabajó con un conjunto de datos del OIJ (2018) que contiene 62828 observaciones y 11 variables:
+
+- Delito: Categorica, tipo de delito al que se expuso la victima
+- SubDelito: Categorica, Como o con que que se realizo el delito
+- Fecha: Fecha del delito
+- Hora: Hora del delito
+- Victima: Categorica, puede ser PERSONA, VIVIENDA, EDIFICACION, VEHICULO, OTROS
+- SubVictima: Categorica, especificamente que tipo de victima es
+- Edad: Categorica, Adulto Mayor, Desconocido, Mayor de edad o Menor de edad
+- Genero: categórica, DESCONOCIDO, HOMBRE O MUJER
+- Nacionalidad: Categórica
+- Provincia: Categorica, incluye 7 provincias
+- Canton: Categorica
+
+```{r}
+oij_dt <- read.csv(file = "oij_2018.csv", header = TRUE, sep = ",",strip.white = TRUE,
+                    stringsAsFactors = TRUE)
+head(oij_dt)
+levels(oij_dt$Genero)
+```
+
+**3.** Observacion de corelaciones
+
+
+Parece que la variable rol es la más significativa para determinar si sale ileso o no de un accidente
+
+```{r}
+tbl <- with(oij_dt, table(Delito, Genero))
+ggplot(as.data.frame(tbl), aes(factor(Genero), Freq, fill = Delito)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(oij_dt, table(Delito, Edad))
+ggplot(as.data.frame(tbl), aes(factor(Edad), Freq, fill = Delito)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(oij_dt, table(Delito, Victima))
+ggplot(as.data.frame(tbl), aes(factor(Victima), Freq, fill = Delito)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(oij_dt, table(Delito, SubDelito))
+ggplot(as.data.frame(tbl), aes(factor(SubDelito), Freq, fill = Delito)) +     
+  geom_col(position = 'dodge') + 
+  coord_flip()
+
+tbl <- with(oij_dt, table(Delito, Provincia))
+ggplot(as.data.frame(tbl), aes(factor(Provincia), Freq, fill = Delito)) +     
+  geom_col(position = 'dodge') + 
+  coord_flip()
+```

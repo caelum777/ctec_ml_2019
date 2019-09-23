@@ -1,5 +1,5 @@
 ---
-title: "Clase 7"
+title: "Clase 6"
 output: html_document
 ---
 
@@ -7,15 +7,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Tarea 7.
-# Validación
+# Tarea 6.
+# Metodos supervisados 2
 
 Librerias
 ```{r}
+library(caTools)
+library(rpart)
+library(dplyr)
+library(ggplot2)
 #..........Librerias de los modelos
+library(rpart)
+library(randomForest)
+library(neuralnet)
+library(e1071)
+library(nnet)
+library(ROCR)
 ```
 
-1. Desarolle el An?lisis del Problema
+1. Desarolle el Analisis del Problema
 ```{r}
 # Construya el análisis del problema
 
@@ -34,36 +44,219 @@ http://datosabiertos.csv.go.cr/dashboards/19683/accidentes/
 1. Cargue el archivo nombre.csv en una variable
 
 ```{r}
-# Escriba su c?digo aqui
+accidentes <- read.csv(file = "temp_5571830814335439232.csv", header = TRUE, sep = ",", strip.white = TRUE, stringsAsFactors = TRUE,
+                       colClasses = c("NULL","factor", "factor", "factor", "factor", "factor", "integer", "factor", "factor", "factor", "factor", "factor", "NULL", "NULL", "NULL"))
+
+# Cambiamos los headers por unos más legibles
+names(accidentes) <- c("rol", "lesion", "edad", "edad.quinquenal", "sexo", "anno", "mes", "dia", "provincia", "canton", "distrito")
+
+# Cambiamos el tipo de lesion por Ileso o No Ileso
+levels(accidentes$lesion) <- c("No Ileso", "No Ileso", "Ileso", "No Ileso")
+
+# Cambiamos nombres de provincias por unos mas legibles
+levels(accidentes$provincia) <- c("Alajuela", "Cartago", "Guanacaste", "Heredia", "Limon", "Puntarenas", "San Jose")
+
+# Cambiamos nombres de rol por unos mas legibles
+levels(accidentes$rol) <- c("Ciclista", "Conductor", "Dueno de propiedad", "Motociclista", "Otro", "Pasajero bicicleta", "Pasajero bus o microbus", "Pasajero carro", "Pasajero moto", "Peaton")
+
+# Cambiamos nombres de dia por unos mas legibles
+levels(accidentes$dia) <- c("Domingo", "Jueves", "Lunes", "Martes", "Miercoles", "Sabado", "Viernes")
+accidentes$dia <- factor(accidentes$dia, order = TRUE, 
+                         levels = c("Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"))
 ```
 
+ 
 2. Desarolle el Entendimiento de los Datos
 
-```{r}
-# Escriba su c?digo aqui
-```
+1. Rol	
+2. Tipo de lesión	
+3. Edad
+3. Sexo
+4. Año
+5. Mes
+6. Día
+7. Provincia
+8. Cantón
+9. Distrito
 
-3. Utilizando barplot cree un gr?fico de los atributos del dataset, observe las correlaciones entre atributos
+3. Utilizando barplot cree un grafico de los atributos del dataset, observe las correlaciones entre atributos
+
+
+Parece que la variable rol es la más significativa para determinar si sale ileso o no de un accidente
 
 ```{r}
-# Escriba su c?digo aqui
+glimpse(accidentes)
+
+tbl <- with(accidentes, table(lesion, provincia))
+ggplot(as.data.frame(tbl), aes(factor(provincia), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(accidentes, table(lesion, sexo))
+ggplot(as.data.frame(tbl), aes(factor(sexo), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(accidentes, table(lesion, dia))
+ggplot(as.data.frame(tbl), aes(factor(dia), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge')
+
+tbl <- with(accidentes, table(lesion, rol))
+ggplot(as.data.frame(tbl), aes(factor(rol), Freq, fill = lesion)) +     
+  geom_col(position = 'dodge') +
+  coord_flip()
 ```
 
 
 4. Realice al menos 5 modelos de los observados en clase
 ```{r}
-# Escriba su c?digo aqui
+set.seed(777)
+splt <- sample.split(accidentes$lesion, SplitRatio = 0.7)
+accidentes.entrenamiento <- accidentes[splt,] 
+accidentes.prueba <- accidentes[!splt,] 
+
+accidentes.small <- accidentes[1:10000,]
+splt2 <- sample.split(accidentes.small$lesion, SplitRatio = 0.7)
+accidentes.small.entrenamiento <- accidentes.small[splt2,] 
+accidentes.small.prueba <- accidentes.small[!splt2,] 
 ```
 
-5. Evaluaci?n de los modelos
 ```{r}
-# Escriba su c?digo aqui
-# Matriz de confusion y Curva ROCK
+modelo.arbol <- rpart(lesion ~ rol + edad.quinquenal + sexo, data = accidentes.entrenamiento, method =  'class')
+modelo.bosque <- randomForest(lesion ~ rol + edad.quinquenal + sexo, data = accidentes.entrenamiento)
+modelo.regresion <- stats::glm(lesion ~ rol + edad.quinquenal + sexo, data = accidentes.entrenamiento, family = binomial)
+modelo.svm <- svm(lesion  ~  rol + edad.quinquenal + sexo, data = accidentes.small.entrenamiento, kernel='linear',cross=2, scale=FALSE)
+```
 
+```{r}
+# Modelo de Red Neuronal
+accidentes.entrenamiento <- cbind(accidentes.entrenamiento, class.ind(accidentes.entrenamiento$lesion))
+accidentes.entrenamiento <- cbind(accidentes.entrenamiento, class.ind(accidentes.entrenamiento$rol))
+names(accidentes.entrenamiento)[12:23] <-
+  c("No.Ileso","Ileso","Ciclista","Conductor","Duenno.de.propiedad","Motociclista","Otro",
+    "Pasajero.bicicleta","Pasajero.bus.o.microbus","Pasajero.carro","Pasajero.moto","Peaton")
+
+modelo.neural <- neuralnet(
+  Ileso ~ Ciclista+Conductor+Duenno.de.propiedad+Motociclista+Otro+Pasajero.bicicleta+Pasajero.bus.o.microbus+Pasajero.carro+Pasajero.moto+Peaton,
+  data=accidentes.entrenamiento, 
+  hidden=3
+)
+```
+
+5. Evaluacion de los modelos
+```{r}
+# Evaluacion de Arbol de desicion
+modelo.arbol.predicciones <- predict(modelo.arbol, newdata = accidentes.prueba, type = 'class')
+modelo.arbol.evaluacion <- table(accidentes.prueba$lesion, modelo.arbol.predicciones)
+modelo.arbol.performance <- performance(ROCR::prediction(c(modelo.arbol.predicciones), c(accidentes.prueba$lesion)), measure = "auc")@y.values
+print(modelo.arbol.evaluacion)
+print(modelo.arbol.performance)
+
+# Curva ROC
+prediccionesROC = ROCR::prediction(c(modelo.arbol.predicciones), c(accidentes.prueba$lesion))
+as.numeric(performance(prediccionesROC, "auc")@y.values)
+
+plot(performance(prediccionesROC, "tpr", "fpr"),
+colorize = T,
+print.cutoffs.at = seq(0,1,by = 0.1),
+text.adj = c(-0.2,1.7),
+main = 'Curva ROC del modelo Arbol de Desicion')
+```
+
+```{r}
+# Evaluamos las predicciones del random forest
+modelo.bosque.predicciones <- predict(modelo.bosque, newdata = accidentes.prueba, type = 'class')
+modelo.bosque.evaluacion <- table(accidentes.prueba$lesion, modelo.bosque.predicciones)
+modelo.bosque.performance <- performance(ROCR::prediction(c(modelo.bosque.predicciones), c(accidentes.prueba$lesion)), measure = "auc")@y.values
+print(modelo.bosque.evaluacion)
+print(modelo.bosque.performance)
+
+# Curva ROC
+prediccionesROC = ROCR::prediction(c(modelo.bosque.predicciones), c(accidentes.prueba$lesion))
+as.numeric(performance(prediccionesROC, "auc")@y.values)
+
+plot(performance(prediccionesROC, "tpr", "fpr"),
+colorize = T,
+print.cutoffs.at = seq(0,1,by = 0.1),
+text.adj = c(-0.2,1.7),
+main = 'Curva ROC del modelo Random Forest')
+```
+
+```{r}
+# Evaluamos las predicciones de la regresion logistica
+modelo.regresion.predicciones <- predict(modelo.regresion, newdata = accidentes.prueba, type = 'response')
+modelo.regresion.evaluacion <- table(accidentes.prueba$lesion, modelo.regresion.predicciones >= 0.7)
+modelo.regresion.performance <- performance(ROCR::prediction(c(modelo.regresion.predicciones), c(accidentes.prueba$lesion)), measure = "auc")@y.values
+print(modelo.regresion.evaluacion)
+print(modelo.regresion.performance)
+
+# Curva ROC
+prediccionesROC = ROCR::prediction(c(modelo.regresion.predicciones), c(accidentes.prueba$lesion))
+as.numeric(performance(prediccionesROC, "auc")@y.values)
+
+plot(performance(prediccionesROC, "tpr", "fpr"),
+colorize = T,
+print.cutoffs.at = seq(0,1,by = 0.1),
+text.adj = c(-0.2,1.7),
+main = 'Curva ROC del modelo Regresion Logistica')
+```
+
+```{r}
+# Evaluamos las predicciones de la Red Neuronal
+accidentes.prueba <- cbind(accidentes.prueba, class.ind(accidentes.prueba$lesion))
+accidentes.prueba <- cbind(accidentes.prueba, class.ind(accidentes.prueba$rol))
+names(accidentes.prueba)[12:23] <-
+  c("No.Ileso","Ileso","Ciclista","Conductor","Duenno.de.propiedad","Motociclista","Otro",
+    "Pasajero.bicicleta","Pasajero.bus.o.microbus","Pasajero.carro","Pasajero.moto","Peaton")
+
+plot(modelo.neural,rep="best")
+mp <- as.matrix(sapply(accidentes.prueba[,12:23], as.numeric))
+modelo.neural.predicciones <- neuralnet::compute(modelo.neural, mp)
+
+results <- data.frame(actual = mp, prediction = modelo.neural.predicciones$net.result)
+#results
+
+modelo.neural.evaluacion <- table(accidentes.prueba$lesion, modelo.neural.predicciones$net.result >= 0.7)
+modelo.neural.performance <- performance(ROCR::prediction(c(modelo.neural.predicciones$net.result), c(accidentes.prueba$lesion)), measure = "auc")@y.values
+print(modelo.neural.evaluacion)
+print(modelo.neural.performance)
+
+# Curva ROC
+prediccionesROC = ROCR::prediction(c(modelo.neural.predicciones$net.result), c(accidentes.prueba$lesion))
+as.numeric(performance(prediccionesROC, "auc")@y.values)
+
+plot(performance(prediccionesROC, "tpr", "fpr"),
+colorize = T,
+print.cutoffs.at = seq(0,1,by = 0.1),
+text.adj = c(-0.2,1.7),
+main = 'Curva ROC del modelo Red Neural')
+```
+
+```{r}
+# Evaluamos las predicciones de SVM
+modelo.svm.predict <- predict(modelo.svm, newdata = accidentes.small.prueba)
+modelo.svm.evaluacion <- table(accidentes.small.prueba$lesion, modelo.svm.predict)
+modelo.svm.performance <- performance(ROCR::prediction(c(modelo.svm.predict), c(accidentes.small.prueba$lesion)), measure = "auc")@y.values
+print(modelo.neural.evaluacion)
+print(modelo.svm.performance)
+
+# Curva ROC
+prediccionesROC = ROCR::prediction(c(modelo.svm.predict), c(accidentes.small.prueba$lesion))
+as.numeric(performance(prediccionesROC, "auc")@y.values)
+
+plot(performance(prediccionesROC, "tpr", "fpr"),
+colorize = T,
+print.cutoffs.at = seq(0,1,by = 0.1),
+text.adj = c(-0.2,1.7),
+main = 'Curva ROC del modelo SVM')
 ```
 
 
-6. Desarolle al menos 5 conclusiones sobre las clasificaciones de los modelos basado en la evaluación
+6. Desarolle al menos 5 conclusiones sobre las clasificaciones de los modelos
+
+- El modelo de Regresion Logistica nos ha dado los mejores resultados, la curva ROC destaca de las demás y se nota que tiene mejor rendimiento.
+- El Arbol de desicion y el Random Forest nos dan resultados muy similares, se puede notar al ver los graficos ROC de ambas son muy similares. Se podría mejorar el algoritmo de Random Forest aplicando un poco de tuning pero no se obtuvo resultados significativos.
+- La red neuronal no es el mejor modelo para este caso, al tratar de agregar más inputs se hace inmanejable y dura mucho en correr el modelo.
+- Parece que la variable de rol es la que más afecta los resultados, ya que las demás variables no muentras tanta diferencia entre si.
+- Se recomienda utilizar un dataset con más columnas disponible en el sitio del COSEVI, en la que es posible existan variables más significativas.
 
 
 
