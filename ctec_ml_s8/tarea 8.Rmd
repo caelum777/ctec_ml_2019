@@ -58,7 +58,9 @@ library(ROCR)
     
 **1.** Desarolle el Análisis del Problema
 
-
+Se nos presenta un dataset del OIJ para año 2018, con delitos en diferentes provincia, clasificado por tipo de victima, entre otros atributos. Si realizamos
+un buen analisis a estos datos podremos detectar informacion que nos pueda ayudar a encontrar al posible que tan expuesto esta una persona a que sea una victima de un determinado delito, ya sea personal o hacía la propiedad, en nuestro caso hacía el vehiculo. Esta informacion puede ser valiosa por ejemplo
+para una empresa dedicada a la venta de articulos de defensa personal para determinar potenciales clientes.
 
 Fuente del dataset:
 https://sitiooij.poder-judicial.go.cr/index.php/apertura/transparencia/estadisticas-policiales
@@ -84,13 +86,17 @@ Con el fin de analizar y tratar de determinar el tipo de delito al que podría e
 ```{r}
 oij_dt <- read.csv(file = "oij_2018.csv", header = TRUE, sep = ",",strip.white = TRUE,
                     stringsAsFactors = FALSE)
+
+#Eliminamos los datos sobre homicidios ya que solo nos interesan los datos de hurtos, robos, robos a vehiculos, tachas
 oij_dt <- oij_dt[oij_dt$Delito!="HOMICIDIO",]
+#Cambiamos los delitos a que sean unicamente ATAQUE PERSONAL o ATAQUE VEHICULO
 oij_dt$Delito[oij_dt$Delito == "ASALTO"] <- "ATAQUE PERSONAL"
 oij_dt$Delito[oij_dt$Delito == "HURTO"] <- "ATAQUE PERSONAL"
 oij_dt$Delito[oij_dt$Delito == "ROBO"] <- "ATAQUE PERSONAL"
 oij_dt$Delito[oij_dt$Delito == "ROBO DE VEHICULO"] <- "ATAQUE VEHICULO"
 oij_dt$Delito[oij_dt$Delito == "TACHA DE VEHICULO"] <- "ATAQUE VEHICULO"
 
+#Cambiamos las columnas que vamos a utilizar a factores
 oij_dt$Delito <- as.factor(oij_dt$Delito)
 oij_dt$Victima <- as.factor(oij_dt$Victima)
 oij_dt$Edad <- as.factor(oij_dt$Edad)
@@ -98,12 +104,13 @@ oij_dt$Genero <- as.factor(oij_dt$Genero)
 oij_dt$Provincia <- as.factor(oij_dt$Provincia)
 
 head(oij_dt)
-levels(oij_dt$Delito)
 ```
 
 **3.** Observacion de corelaciones
 
-
+- La mayor de ataque personales han sido en San Jose y es proporcionalmente más grande comparado a otras provincias.
+- La mayoria de ataques personales se concentran en personas mayores de edad.
+- Hay más casos de ataques personales y a vehiculo en hombres que mujeres, tomando en cuenta que ambas poblaciones son similares en Costa Rica.
 
 ```{r}
 tbl <- with(oij_dt, table(Delito, Genero))
@@ -124,8 +131,9 @@ ggplot(as.data.frame(tbl), aes(factor(Provincia), Freq, fill = Delito)) +
   coord_flip()
 ```
 
-4. Realice al menos 5 modelos de los observados en clase
+**4.** Realice al menos 5 modelos de los observados en clase
 ```{r}
+#Creamos los set de training y testing
 set.seed(777)
 splt <- sample.split(oij_dt$Delito, SplitRatio = 0.7)
 oij_dt.entrenamiento <- oij_dt[splt,] 
@@ -133,9 +141,13 @@ oij_dt.prueba <- oij_dt[!splt,]
 ```
 
 ```{r}
+#ejecutamos los modelos
 modelo.bosque <- randomForest(Delito ~ Victima + Edad + Genero + Provincia, data = oij_dt.entrenamiento)
 modelo.regresion <- stats::glm(Delito ~ Victima + Edad + Genero + Provincia, data = oij_dt.entrenamiento, family = binomial)
 ```
+
+
+**5.** Evaluacion de los modelos
 
 ```{r}
 # Evaluamos las predicciones del random forest
@@ -174,3 +186,15 @@ print.cutoffs.at = seq(0,1,by = 0.1),
 text.adj = c(-0.2,1.7),
 main = 'Curva ROC del modelo Regresion Logistica')
 ```
+
+**6.** Conclusiones
+
+- Ambos modelos de regresion y random forest obtubieron buenos resultados, aunque la regresion tiene una ligera ventaja.
+
+- Si tomamos en cuenta que la poblacion de mujeres y hombres es muy similar en Costa Rica, los datos sugieren que es más probable que un hombre sea victima
+de un delito.
+
+- Surge la pregunta de, cual es la real distincion entre un ataque personal y uno de vehiculo, por genero, edad y provincia, parece que no la hay, el factor determinanate parece ser la victima, evidentemente si la victima es un vehiculo, significa que es un ataque al vehiculo. Para esto entonces necesitamos más datos que nos ayuden a hacer una diferencia másnotable, tal ves si incluimos los datos de la fecha por mes, podríamos encontrar que en determinados meses las tachas a vehiculos son más probables.
+
+- Los datos se prestan bastante para hacer analisis exploratorios y graficas para determinar que tipo de delitos son más comunes por edad, genero, provincia, fecha, subdelito es interesante porque se puede hacer analisis más enfocados. Al final es lo que a una empresa de seguridad la podría interesar, que tipo de servicios o productos puedo ofrecer a distintas poblaciones basado en la frecuencia de delito o subdelito para determinado factor.
+
